@@ -62,8 +62,40 @@ const addMembers = async (req, res) => {
 };
 
 // router.get('/list')
-const getRooms = async (req,res)=>{
-    
-}
-// router.delete('/delete')
+const getRooms = async (req, res) => {
+  const userId = req.user?.id;
+  try {
+    if (!userId) {
+      res.status(404).json({ message: "No lists available" });
+    }
+    const user = await prisma.user.findFirst({ where: { id: userId } });
+    res.status(201).json({ message: user.joinedRooms });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+// router.delete('/:roomId/leave')
+const deleteRoom = async (req, res) => {
+  const { roomId } = req.params;
+  const userId = req.user?.id;
+  try {
+    const room = await prisma.room.findUnique({
+      where: { id: Number(roomId) },
+    });
+    if (!room) {
+      res.status(404).json({ message: "Room cannot be located" });
+    }
+    if (room.ownerId === userId) {
+      await prisma.note.deleteMany({ where: { roomId: room.id } });
+      await prisma.roomUser.deleteMany({ where: { roomId: room.id } });
+      await prisma.room.delete({ where: { id: room.id } });
+      res.status(201).json({ message: "Room was deleted" });
+    } else {
+      await prisma.roomUser.delete({ where: {roomId: room.id, userId: userId } });
+      res.status(201).json({ message: "Room was removed from your account" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 module.exports = { createRoom, addMembers, getRooms, deleteRoom };
