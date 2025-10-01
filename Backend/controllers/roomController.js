@@ -1,6 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const jwt = require("jsonwebtoken");
 
 // router.post('/create')
 const createRoom = async (req, res) => {
@@ -8,7 +7,7 @@ const createRoom = async (req, res) => {
   const userId = req.user?.id;
   try {
     if (!userId) {
-      res.status(403).json({ message: "Action Forbidden" });
+      return res.status(403).json({ message: "Action Forbidden" });
     }
     const newRoom = await prisma.room.create({
       data: { name: name, ownerId: userId },
@@ -21,7 +20,7 @@ const createRoom = async (req, res) => {
         role: "admin",
       },
     });
-    res.status(201).json({ message: "Room created", room: newRoom });
+    return res.status(201).json({ message: "Room created", room: newRoom });
   } catch (err) {
     res.status(500).json({ message: "Internal Service Error" });
   }
@@ -33,7 +32,7 @@ const addMembers = async (req, res) => {
   const userId = req.user?.id;
   try {
     if (!userId) {
-      res.status(403).json({ message: "Action Forbidden" });
+      return res.status(403).json({ message: "Action Forbidden" });
     }
     const room = await prisma.room.findFirst({ where: { id: Number(roomId) } });
     if (!room || room.ownerId !== userId) {
@@ -43,11 +42,11 @@ const addMembers = async (req, res) => {
     }
     const member = await prisma.user.findFirst({ where: { email: email } });
     if (!member) {
-      res.status(404).json({ message: "Cannot locate user" });
+      return res.status(404).json({ message: "Cannot locate user" });
     }
     const alreadyPresent = member.joinedRooms.some((j) => j.roomId === room.id);
     if (alreadyPresent) {
-      res.status(400).json({ message: "User is already in the room" });
+      return res.status(400).json({ message: "User is already in the room" });
     }
     const addUser = await prisma.roomUser.create({
       data: {
@@ -69,7 +68,7 @@ const getRooms = async (req, res) => {
       res.status(404).json({ message: "No lists available" });
     }
     const user = await prisma.user.findFirst({ where: { id: userId } });
-    res.status(201).json({ message: user.joinedRooms });
+    return res.status(201).json({ message: user.joinedRooms });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -83,7 +82,7 @@ const deleteRoom = async (req, res) => {
       where: { id: Number(roomId) },
     });
     if (!room) {
-      res.status(404).json({ message: "Room cannot be located" });
+      return res.status(404).json({ message: "Room cannot be located" });
     }
     if (room.ownerId === userId) {
       await prisma.note.deleteMany({ where: { roomId: room.id } });
