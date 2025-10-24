@@ -8,7 +8,7 @@ const {
   deleteAccount,
 } = require("../controllers/userController");
 
-router.get("/login", login);
+router.post("/login", login);
 router.get("/logout", logout); // not yet implemented
 router.post("/signup", createAccount);
 router.put("/update-record", updateUser);
