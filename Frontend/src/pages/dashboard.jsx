@@ -3,17 +3,18 @@ import styled from "styled-components";
 import Grid from "../components/dash-grid.jsx";
 const Wrapper = styled.div``;
 const Nav = styled.nav`
-  width: 100vw;
   background-color: white;
-  display: flex;
-  flex-direction: row;
   justify-content: center;
   align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+
   h1 {
     background-image: linear-gradient(45deg, #fa5f5f, #8e7eff);
     color: transparent;
     background-clip: text;
-    margin: 1rem 2rem;
+    margin: 1rem;
+    font-size: 26px;
   }
 `;
 const A = styled.a`
@@ -27,12 +28,21 @@ const Button = styled.button`
   background-color: rgba(142, 126, 255, 1);
   color: white;
   border: none;
-  margin: 0.5rem 5rem;
   border-radius: 0.7rem;
   cursor: pointer;
   padding: 0.6rem 1.5rem;
 `;
-
+const Content = styled.div`
+  margin: 1rem;
+`;
+const Text = styled.h1`
+  color: black;
+  font-size: 26px;
+  margin: 0 0 0.5rem 0;
+`;
+const S = styled.span`
+  color: gray;
+`;
 function Dashboard() {
   const mockRooms = [
     {
@@ -111,15 +121,23 @@ function Dashboard() {
   return (
     <Wrapper>
       <Nav>
-        <h1>Collab</h1>
-        <A onClick={() => setToggle("All")}>All Rooms</A>
-        <A onClick={() => setToggle("Star")}>Starred</A>
-        <A onClick={() => setToggle("Recent")}>Recent</A>
-        <Button>
-          <span>+ </span>New Room
-        </Button>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <h1>Collab</h1>
+          <A onClick={() => setToggle("All")}>All Rooms</A>
+          <A onClick={() => setToggle("Star")}>Starred</A>
+          <A onClick={() => setToggle("Recent")}>Recent</A>
+        </div>
+        <div style={{ position: "absolute", right: "2rem" }}>
+          <Button>
+            <span>+ </span>New Room
+          </Button>
+        </div>
       </Nav>
-      <Grid rooms={mockRooms}/>
+      <Content>
+        <Text>Your Rooms</Text>
+        <S>{mockRooms.length} Active Rooms</S>
+        <Grid rooms={mockRooms} />
+      </Content>
     </Wrapper>
   );
 }

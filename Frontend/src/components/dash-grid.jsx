@@ -4,6 +4,10 @@ const Wrap = styled.div`
   display: grid;
   gap: 2rem;
   grid-template-columns: repeat(3, 1fr);
+  margin-top: 1rem;
+  a{
+    text-decoration: none;
+  }
 `;
 
 const Container = styled.div`
@@ -54,7 +58,8 @@ function Grid({ rooms }) {
   return (
     <Wrap>
       {rooms.map((room) => (
-        <Container key={room.id}>
+        <a href={`/room/${room.id}`} key={room.id}>
+        <Container >
           <Title>{room.name}</Title>
           <Text>{room.description}</Text>
           <Content>
@@ -123,6 +128,7 @@ function Grid({ rooms }) {
             </div>
           </Content>
         </Container>
+        </a>
       ))}
     </Wrap>
   );
