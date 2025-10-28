@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Grid from "../components/dash-grid.jsx";
-const Wrapper = styled.div``;
+const Wrapper = styled.div`
+  height: 100vh;
+`;
 const Nav = styled.nav`
   background-color: white;
   justify-content: center;
