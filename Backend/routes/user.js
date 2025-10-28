@@ -9,7 +9,7 @@ const {
 } = require("../controllers/userController");
 
 router.post("/login", login);
-router.get("/logout", logout); // not yet implemented
+router.get("/logout", logout); 
 router.post("/signup", createAccount);
 router.put("/update-record", updateUser);
 router.delete("/delete", deleteAccount);

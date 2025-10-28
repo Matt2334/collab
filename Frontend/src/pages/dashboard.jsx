@@ -137,9 +137,10 @@ function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [list, setList] = useState([]);
   useEffect(() => {
-    fetch("http://localhost:5000/api/room/list", {
+    fetch("http://localhost:3000/api/room/list", {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
     })
       .then((response) => {
         if (response.status === 403) {
@@ -187,8 +188,8 @@ function Dashboard() {
       <Content>
         {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
         <Text>Your Rooms</Text>
-        <S>{mockRooms.length} Active Rooms</S>
-        <Grid rooms={mockRooms} />
+        {list.length>0? <S>{list.length} Active Rooms</S>:<S>Create Your first room!</S>}
+        <Grid rooms={list} />
       </Content>
     </Wrapper>
   );

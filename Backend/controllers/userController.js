@@ -5,13 +5,13 @@ const jwt = require("jsonwebtoken");
 
 // router.post("/signup");
 const createAccount = async (req, res) => {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
   try {
     const hPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email: email, password: hPassword },
+      data: { name: name, email: email, password: hPassword },
     });
-    res.status(201);
+    res.status(201).json({ message: "User created" });
   } catch (err) {
     res.json({ error: err.message });
   }
@@ -30,10 +30,16 @@ const login = async (req, res) => {
     if (!pMatch) {
       return res.status(401).json({ error: "Authentication failed" });
     }
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+    const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {
       expiresIn: "1h",
     });
-    res.status(201).json({ token });
+    res.cookie("token", token, {
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict", // CSRF protection
+      maxAge: 3600000 
+    });
+    res.status(200).json({message:'Login Successful' });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
   }
@@ -43,7 +49,6 @@ const logout = async (req, res) => {
   req.session.destroy(() => {
     res.status(200).json({ message: "Logged out successfully" });
   });
-
 };
 // router.put("/update-record");
 const updateUser = async (req, res) => {

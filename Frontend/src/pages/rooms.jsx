@@ -230,7 +230,7 @@ function Rooms() {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   useEffect(() => {
-    fetch(`http://localhost:5000/api/note/${id}/notes`, {
+    fetch(`http://localhost:3000/api/note/${id}/notes`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     })
