@@ -90,7 +90,9 @@ const deleteRoom = async (req, res) => {
       await prisma.room.delete({ where: { id: room.id } });
       res.status(201).json({ message: "Room was deleted" });
     } else {
-      await prisma.roomUser.delete({ where: {roomId: room.id, userId: userId } });
+      await prisma.roomUser.delete({
+        where: { roomId: room.id, userId: userId },
+      });
       res.status(201).json({ message: "Room was removed from your account" });
     }
   } catch (err) {

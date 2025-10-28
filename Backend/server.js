@@ -1,9 +1,9 @@
 const app = require("./config/app.js");
 const cors = require("cors");
 const express = require("express");
-const userRoutes = require("./controllers/userController");
-const noteRoutes = require("./controllers/noteController");
-const roomRoutes = require("./controllers/roomController");
+const userRoutes = require("./routes/user");
+const noteRoutes = require("./routes/notes");
+const roomRoutes = require("./routes/rooms");
 
 app.use(cors());
 app.use(express.json());

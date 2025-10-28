@@ -39,7 +39,12 @@ const login = async (req, res) => {
   }
 };
 // router.get("/logout");
-const logout = async (req, res) => {};
+const logout = async (req, res) => {
+  req.session.destroy(() => {
+    res.status(200).json({ message: "Logged out successfully" });
+  });
+
+};
 // router.put("/update-record");
 const updateUser = async (req, res) => {
   const userId = req.user.id;
