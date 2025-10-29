@@ -67,27 +67,61 @@ const getRooms = async (req, res) => {
     if (!userId) {
       res.status(401).json({ message: "Unauthorized" });
     }
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        rooms: true,
-        joinedRooms: {
-          include: {
-            room: true,
-            include:{
-              notes:true,
-              members:true
-            }
-          },
-        },
-      },
-    });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const allRooms = [...user.joinedRooms.map((joined) => joined.room)];
+    const roomQuery = await prisma.room.findMany({
+      where: {
+        OR: [
+          { ownerId: userId },
+          {
+            members: {
+              some: {
+                userId: userId,
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        notes: {
+          take: 1,
+          orderBy: {
+            updatedAt: "desc",
+          },
+          select: {
+            updatedAt: true,
+          },
+        },
+        _count: {
+          select: {
+            notes: true,
+            members: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc", 
+      },
+    });
+    const allRooms = roomQuery.map(room=>({
+      id:room.id,
+      name:room.name,
+      author:room.owner.name,
+      lastActive: room.notes[0]?.updatedAt || room.createdAt,
+      noteCount:room._count.notes,
+      memberCount:room._count.members,
+    }))
 
-    return res.status(201).json(allRooms);
+    return res.status(200).json(allRooms);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

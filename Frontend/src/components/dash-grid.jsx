@@ -42,6 +42,7 @@ const Title = styled.h3`
 const Text = styled.span`
   color: oklch(0.55 0.02 280);
   font-size: 14px;
+  margin-right: 0.5rem;
 `;
 
 const Content = styled.div`
@@ -56,7 +57,14 @@ const Content = styled.div`
   }
 `;
 function Grid({ rooms }) {
-  
+  // const allRooms = roomQuery.map(room=>({
+  //     id:room.id,
+  //     name:room.name,
+  //     author:room.owner.name,
+  //     lastActive: room.notes[0]?.updatedAt || room.createdAt,
+  //     noteCount:room._count.notes,
+  //     memberCount:room._count.members,
+  //   }))
   return (
     <Wrap>
       {console.log("rooms:", rooms)}
@@ -78,14 +86,13 @@ function Grid({ rooms }) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    
                   >
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
                     <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                   </svg>
-                  {room.members}
+                  {room.memberCount}
                 </Text>
                 <Text>
                   <svg
@@ -98,7 +105,6 @@ function Grid({ rooms }) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    
                   >
                     <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
                     <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
@@ -106,12 +112,14 @@ function Grid({ rooms }) {
                     <path d="M16 13H8"></path>
                     <path d="M16 17H8"></path>
                   </svg>
-                  {room.notes}
+                  {room.noteCount}
                 </Text>
               </div>
               <div style={{ marginTop: "1rem" }}>
+                <Text>{room.author}</Text>
                 <Text>
-                  <svg
+                  {/* {room.author} */}
+                  {/* <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
                     height="24"
@@ -125,8 +133,9 @@ function Grid({ rooms }) {
                   >
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  {room.lastActive}
+                  </svg> */}
+                  {/* {room.lastActive} */}
+                  x time ago.
                 </Text>
               </div>
             </Content>

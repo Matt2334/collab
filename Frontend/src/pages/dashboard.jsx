@@ -95,7 +95,10 @@ function Dashboard() {
     })
       .then((response) => {
         console.log(response)
-        if (response.status === 403) {
+        if (response.status===401){
+          window.location.replace('/login')
+        }
+        else if (response.status === 403) {
           setErrorMessage("You must be logged in to perform this action");
         } else if(response.status === 404){
           setErrorMessage(response.message) //will need to change so a different action is performed when no lists are present
