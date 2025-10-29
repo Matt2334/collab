@@ -35,7 +35,7 @@ const login = async (req, res) => {
     });
     res.cookie("token", token, {
       httpOnly: true, 
-      secure: process.env.NODE_ENV === "production",
+      secure: false, //in dev false, for production needs to be true
       sameSite: "strict", // CSRF protection
       maxAge: 3600000 
     });
@@ -70,7 +70,7 @@ const updateUser = async (req, res) => {
 };
 // router.delete("/delete");
 const deleteAccount = async (req, res) => {
-  const userId = req.user?.id;
+  const userId = req?.userId;
   if (!userId) {
     res.status(404).json({ message: "You are forbidden from this action" });
   }

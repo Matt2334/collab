@@ -56,8 +56,10 @@ const Content = styled.div`
   }
 `;
 function Grid({ rooms }) {
+  
   return (
     <Wrap>
+      {console.log("rooms:", rooms)}
       {rooms.map((room) => (
         <Link to={`/rooms/${room.id}`} key={room.id}>
           <Container>
@@ -104,7 +106,7 @@ function Grid({ rooms }) {
                     <path d="M16 13H8"></path>
                     <path d="M16 17H8"></path>
                   </svg>
-                  {room.noteCount}
+                  {room.notes}
                 </Text>
               </div>
               <div style={{ marginTop: "1rem" }}>

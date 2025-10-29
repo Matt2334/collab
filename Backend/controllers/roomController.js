@@ -3,8 +3,8 @@ const prisma = new PrismaClient();
 
 // router.post('/create')
 const createRoom = async (req, res) => {
-  const { name } = req.body;
-  const userId = req.user?.id;
+  const { name, description } = req.body;
+  const userId = req?.userId;
   try {
     if (!userId) {
       return res.status(403).json({ message: "Action Forbidden" });
@@ -29,7 +29,7 @@ const createRoom = async (req, res) => {
 const addMembers = async (req, res) => {
   const { roomId } = req.params;
   const { email } = req.body;
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     if (!userId) {
       return res.status(403).json({ message: "Action Forbidden" });
@@ -62,13 +62,32 @@ const addMembers = async (req, res) => {
 
 // router.get('/list')
 const getRooms = async (req, res) => {
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     if (!userId) {
-      res.status(404).json({ message: "No lists available" });
+      res.status(401).json({ message: "Unauthorized" });
     }
-    const user = await prisma.user.findFirst({ where: { id: userId } });
-    return res.status(201).json({ message: user.joinedRooms });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        rooms: true,
+        joinedRooms: {
+          include: {
+            room: true,
+            include:{
+              notes:true,
+              members:true
+            }
+          },
+        },
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const allRooms = [...user.joinedRooms.map((joined) => joined.room)];
+
+    return res.status(201).json(allRooms);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -76,7 +95,7 @@ const getRooms = async (req, res) => {
 // router.delete('/:roomId/leave')
 const deleteRoom = async (req, res) => {
   const { roomId } = req.params;
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     const room = await prisma.room.findUnique({
       where: { id: Number(roomId) },

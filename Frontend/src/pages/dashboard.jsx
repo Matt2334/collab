@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Grid from "../components/dash-grid.jsx";
+import CreateRoom from "../components/create-room.jsx";
 const Wrapper = styled.div`
   min-height: 100vh;
 `;
@@ -20,7 +21,6 @@ const Nav = styled.nav`
     font-size: 26px;
   }
 `;
-const Logo = styled.h1``;
 const NavLink = styled.button`
   padding: 0.5rem 1rem;
   background: ${(props) =>
@@ -60,7 +60,6 @@ const Button = styled.button`
   }
 `;
 const Content = styled.div`
-  // margin: 1rem;
   max-width: 1400px;
   margin: 0 auto;
   padding: 2.5rem 2rem;
@@ -83,69 +82,25 @@ const ErrorMessage = styled.div`
   font-size: 14px;
 `;
 function Dashboard() {
-  const mockRooms = [
-    {
-      id: "1",
-      name: "Product Planning",
-      description: "Q1 2025 roadmap and feature specs",
-      members: 5,
-      lastActive: "2 hours ago",
-      noteCount: 12,
-    },
-    {
-      id: "2",
-      name: "Design System",
-      description: "Component library and design tokens",
-      members: 3,
-      lastActive: "5 hours ago",
-      noteCount: 8,
-    },
-    {
-      id: "3",
-      name: "Marketing Campaign",
-      description: "Launch strategy and content calendar",
-      members: 7,
-      lastActive: "1 day ago",
-      noteCount: 15,
-    },
-    {
-      id: "4",
-      name: "Engineering Docs",
-      description: "Architecture decisions and API specs",
-      members: 4,
-      lastActive: "3 hours ago",
-      noteCount: 20,
-    },
-    {
-      id: "5",
-      name: "Customer Research",
-      description: "User interviews and feedback analysis",
-      members: 6,
-      lastActive: "4 hours ago",
-      noteCount: 10,
-    },
-    {
-      id: "6",
-      name: "Sprint Planning",
-      description: "Weekly sprint goals and retrospectives",
-      members: 8,
-      lastActive: "30 minutes ago",
-      noteCount: 6,
-    },
-  ];
   const [toggle, setToggle] = useState(""); //might need to be All for default purposes
   const [errorMessage, setErrorMessage] = useState("");
   const [list, setList] = useState([]);
+  const [showCreateRoom, setShowCreateRoom] = useState(false);
+
   useEffect(() => {
     fetch("http://localhost:3000/api/room/list", {
       method: "GET",
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      credentials: "include",
+      // headers: { "Content-Type": "application/json" },
     })
       .then((response) => {
+        console.log(response)
         if (response.status === 403) {
           setErrorMessage("You must be logged in to perform this action");
-        } else if (!response.ok) {
+        } else if(response.status === 404){
+          setErrorMessage(response.message) //will need to change so a different action is performed when no lists are present
+        } 
+        else if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         return response.json();
@@ -154,10 +109,21 @@ function Dashboard() {
         if (data.message) {
           setErrorMessage(data.message);
         } else {
+          console.log(data)
           setList(data);
         }
       });
   }, []);
+  const handleDismiss = () => {
+    setShowCreateRoom(false);
+  };
+  const handleRoomCreated = (newRoom) => {
+    setList([...list, newRoom]);
+    setShowCreateRoom(false);
+  };
+  const handleRoomError = (err) =>{
+    setErrorMessage(err)
+  }
   return (
     <Wrapper>
       <Nav>
@@ -180,17 +146,25 @@ function Dashboard() {
           </NavLink>
         </div>
         <div style={{ position: "absolute", right: "2rem" }}>
-          <Button>
+          <Button onClick={() => setShowCreateRoom(true)}>
             <span>+ </span>New Room
           </Button>
         </div>
       </Nav>
-      <Content>
-        {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
-        <Text>Your Rooms</Text>
-        {list.length>0? <S>{list.length} Active Rooms</S>:<S>Create Your first room!</S>}
-        <Grid rooms={list} />
-      </Content>
+      {showCreateRoom ? (
+        <CreateRoom onCreate={handleRoomCreated} onDismiss={handleDismiss} onError={handleRoomError}/>
+      ) : (
+        <Content>
+          {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+          <Text>Your Rooms</Text>
+          {list.length > 0 ? (
+            <S>{list.length} Active Rooms</S>
+          ) : (
+            <S>Create Your first room!</S>
+          )}
+          {list.length >0? <Grid rooms={list} /> :<></>}
+        </Content>
+      )}
     </Wrapper>
   );
 }

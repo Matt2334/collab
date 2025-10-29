@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const createNote = async (req, res) => {
   const { roomId } = req.params;
   const { content } = req.body;
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     const room = await prisma.room.findUnique({
       where: { id: Number(roomId) },
@@ -24,7 +24,7 @@ const createNote = async (req, res) => {
 // router.get("/:roomId/notes");
 const getNotes = async (req, res) => {
   const { roomId } = req.params;
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     const room = await prisma.room.findUnique({
       where: { id: Number(roomId) },
@@ -66,7 +66,7 @@ const getIndividual = async (req, res) => {
 const updateNote = async (req, res) => {
   const { roomId, notesId } = req.params;
   const { content } = req.body;
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     const roomMember = await prisma.roomUser.findUnique({
       where: { userId: userId, roomId: Number(roomId) },
@@ -90,7 +90,7 @@ const updateNote = async (req, res) => {
 // router.delete("/:roomId/notes/:notesId");
 const deleteNote = async (req, res) => {
   const { roomId, notesId } = req.params;
-  const userId = req.user?.id;
+  const userId = req?.userId;
   try {
     // verify that current user is a member of that room
     const roomMember = await prisma.roomUser.findUnique({
