@@ -1,48 +1,38 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// router.post("/:roomId/notes");
-const createNote = async (req, res) => {
-  const { roomId } = req.params;
-  const { content } = req.body;
-  const userId = req?.userId;
-  try {
-    const room = await prisma.room.findUnique({
-      where: { id: Number(roomId) },
-    });
-    if (!room) {
-      return res.status(404).json({ message: "Cannot find room" });
-    }
-    const note = await prisma.note.create({
-      data: { content: content, roomId: room.id, createdById: userId },
-    });
-    return res.status(201).json(note);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-};
 // router.get("/:roomId/notes");
 const getNotes = async (req, res) => {
   const { roomId } = req.params;
   const userId = req?.userId;
   try {
     const room = await prisma.room.findUnique({
-      where: { id: Number(roomId) },
+      where: {
+        id: Number(roomId),
+        OR: [
+          { owner: userId },
+          {
+            members: {
+              some: {
+                userId: userId,
+              },
+            },
+          },
+        ],
+      },
     });
     if (!room) {
       return res.status(404).json({ message: "Cannot find room" });
     }
-    const roomMember = await prisma.roomUser.findUnique({
-      where: { userId: userId, roomId: room.id },
-    });
-    if (!roomMember) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+
     const notes = await prisma.note.findMany({
       where: { roomId: room.id },
       orderBy: { createdAt: "desc" },
     });
-    return res.status(201).json(notes);
+    if (!notes) {
+      return res.status(404).json({ message: "Notes Not Found" });
+    }
+    return res.status(200).json(notes);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -62,27 +52,58 @@ const getIndividual = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// router.post("/:roomId/notes");
+const createNote = async (req, res) => {
+  const { roomId } = req.params;
+  const userId = req?.userId;
+  try {
+    const room = await prisma.room.findUnique({
+      where: { id: Number(roomId) },
+    });
+    if (!room) {
+      return res.status(404).json({ message: "Cannot find room" });
+    }
+    const newNote = await prisma.note.create({
+      data: { title:"",content: "", roomId: room.id, createdById: userId },
+      include: {
+        createdBy:{
+          select:{
+            id:true,
+            name:true,
+            email:true
+          }
+        }
+      },
+    });
+    return res.status(201).json(newNote);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 // router.put("/:roomId/notes/:notesId");
 const updateNote = async (req, res) => {
   const { roomId, notesId } = req.params;
-  const { content } = req.body;
+  const { title, content } = req.body;
   const userId = req?.userId;
+
   try {
-    const roomMember = await prisma.roomUser.findUnique({
+    const roomMember = await prisma.roomUser.findFirst({
       where: { userId: userId, roomId: Number(roomId) },
     });
     if (!roomMember) {
       return res.status(403).json({ message: "Forbidden" });
     }
+
     const note = await prisma.note.update({
       where: { roomId: Number(roomId), id: Number(notesId) },
-      data: { content: content },
+      data: { title: title, content: content },
     });
     if (!note) {
       return res.status(404).json({ message: "Cannot find note" });
     }
 
-    res.status(201).json({ message: "Updated" });
+    res.status(200).json(note);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
