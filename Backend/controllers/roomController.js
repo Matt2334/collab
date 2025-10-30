@@ -10,7 +10,7 @@ const createRoom = async (req, res) => {
       return res.status(403).json({ message: "Action Forbidden" });
     }
     const newRoom = await prisma.room.create({
-      data: { name: name, description:description, ownerId: userId },
+      data: { name: name, desc: description, ownerId: userId },
     });
 
     await prisma.roomUser.create({
@@ -115,6 +115,7 @@ const getRooms = async (req, res) => {
     const allRooms = roomQuery.map(room=>({
       id:room.id,
       name:room.name,
+      desc:room.desc,
       author:room.owner.name,
       lastActive: room.notes[0]?.updatedAt || room.createdAt,
       noteCount:room._count.notes,

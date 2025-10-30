@@ -57,22 +57,14 @@ const Content = styled.div`
   }
 `;
 function Grid({ rooms }) {
-  // const allRooms = roomQuery.map(room=>({
-  //     id:room.id,
-  //     name:room.name,
-  //     author:room.owner.name,
-  //     lastActive: room.notes[0]?.updatedAt || room.createdAt,
-  //     noteCount:room._count.notes,
-  //     memberCount:room._count.members,
-  //   }))
   return (
     <Wrap>
-      {console.log("rooms:", rooms)}
+      
       {rooms.map((room) => (
         <Link to={`/rooms/${room.id}`} key={room.id}>
           <Container>
             <Title>{room.name}</Title>
-            <Text>{room.description}</Text>
+            <Text>{room.desc}</Text>
             <Content>
               <div>
                 <Text>

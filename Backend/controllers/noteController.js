@@ -32,11 +32,11 @@ const getNotes = async (req, res) => {
         room: {
           select: {
             name: true,
+            desc: true,
           },
         },
       },
     });
-    console.log(notes);
     if (!notes) {
       return res.status(404).json({ message: "Notes Not Found" });
     }

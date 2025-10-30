@@ -296,8 +296,11 @@ function Rooms() {
           </BackButton>
         </div>
         <Title>
-          <h1>{notes[0]?.room?.name || 'Loading room...'}</h1>
-          <h2>Q1 2025 roadmap and feature specs</h2>
+          {/* need to fix since if there are no notes, it wont come up with the name */}
+          {/* need to fix room description at the same time. We can make an API call if desired */}
+          <h1>{notes[0]?.room?.name || 'Loading room...'}</h1> 
+          <h2>{notes[0]?.room?.desc || 'Loading description...'}</h2>
+          {/* {console.log(notes[0]?.room?.desc)} */}
         </Title>
         <div style={{ display: "flex", flexDirection: "row" }}>
           <InviteButton>
