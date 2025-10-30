@@ -107,6 +107,9 @@ const NoteCard = styled.button`
 
   &:hover {
     background: oklch(0.97 0.01 280);
+    .trash {
+      display: block;
+    }
   }
 
   svg {
@@ -115,6 +118,15 @@ const NoteCard = styled.button`
     color: oklch(0.55 0.02 280);
     flex-shrink: 0;
     margin-top: 2px;
+  }
+  .trash {
+    display: none;
+    stroke: #e37878;
+  }
+  button {
+    border: none;
+    background: inherit;
+    cursor: pointer;
   }
 `;
 
@@ -192,7 +204,7 @@ function Rooms() {
   const [notes, setNotes] = useState([]);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [m, setM] = useState("");
-  
+
   // fetch room's notes
   useEffect(() => {
     fetch(`http://localhost:3000/api/note/${id}/notes`, {
@@ -200,11 +212,12 @@ function Rooms() {
       headers: { "Content-Type": "application/json" },
     })
       .then((response) => {
-        if (response.status === 403 || response.status===401) {
+        if (response.status === 403 || response.status === 401) {
           setM("You must be logged in to perform this action");
         } else if (!response.ok) {
           throw new Error("Network response was not ok");
         }
+        
         return response.json();
       })
       .then((data) => {
@@ -212,8 +225,9 @@ function Rooms() {
           setM(data.message);
         } else {
           setNotes(data);
-          if(data.length > 0 && !selectedNoteId ){
-            setSelectedNoteId(data[0].id)
+
+          if (data.length > 0 && !selectedNoteId) {
+            setSelectedNoteId(data[0].id);
           }
         }
       });
@@ -230,16 +244,35 @@ function Rooms() {
       );
       const newNote = await response.json();
       console.log(newNote);
-      setNotes([newNote, ...notes])
+      setNotes([newNote, ...notes]);
       setSelectedNoteId(newNote.id);
     } catch (err) {
       console.error("Error creating note:", err);
     }
   };
   const handleNoteUpdated = (updatedNote) => {
-    setNotes(notes.map(note => 
-      note.id === updatedNote.id ? updatedNote : note
-    ));
+    setNotes(
+      notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
+    );
+  };
+  const handleNoteDelete = async (noteID) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/note/${id}/notes/${noteID}`,
+        { method: "DELETE", credentials: "include" }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to delete note");
+      }
+      const updatedNotes = notes.filter((note) => note.id !== noteID);
+      setNotes(updatedNotes);
+
+      if (selectedNoteId === noteID) {
+        setSelectedNoteId(updatedNotes.length > 0 ? updatedNotes[0].id : null);
+      }
+    } catch (err) {
+      console.error("Error deleting note:", err);
+    }
   };
   return (
     <Wrap>
@@ -263,7 +296,7 @@ function Rooms() {
           </BackButton>
         </div>
         <Title>
-          <h1>Product Planning</h1>
+          <h1>{notes[0]?.room?.name || 'Loading room...'}</h1>
           <h2>Q1 2025 roadmap and feature specs</h2>
         </Title>
         <div style={{ display: "flex", flexDirection: "row" }}>
@@ -326,10 +359,34 @@ function Rooms() {
                   <p>{note.lastUpdated}</p>
                 </NoteCardMeta>
               </NoteCardContent>
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="trash"
+                onClick={() => handleNoteDelete(note.id)}
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
             </NoteCard>
           ))}
         </SideBar>
-        <EditNote roomID={id} noteID={selectedNoteId} onNoteUpdated={handleNoteUpdated}/>
+        <EditNote
+          roomID={id}
+          noteID={selectedNoteId}
+          onNoteUpdated={handleNoteUpdated}
+        />
       </Bottom>
     </Wrap>
   );

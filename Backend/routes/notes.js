@@ -12,6 +12,6 @@ router.post("/:roomId/notes", createNote);
 router.get("/:roomId/notes", getNotes);
 router.get("/:roomId/notes/:notesId", getIndividual);
 router.put("/:roomId/notes/:notesId", updateNote);
-router.delete("/:roomId/notes/:notesId", deleteNote);
+router.delete("/:roomId/notes/:noteId", deleteNote);
 
 module.exports = router;

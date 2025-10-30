@@ -10,7 +10,7 @@ const createRoom = async (req, res) => {
       return res.status(403).json({ message: "Action Forbidden" });
     }
     const newRoom = await prisma.room.create({
-      data: { name: name, ownerId: userId },
+      data: { name: name, description:description, ownerId: userId },
     });
 
     await prisma.roomUser.create({

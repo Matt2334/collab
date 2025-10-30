@@ -28,7 +28,15 @@ const getNotes = async (req, res) => {
     const notes = await prisma.note.findMany({
       where: { roomId: room.id },
       orderBy: { createdAt: "desc" },
+      include: {
+        room: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
+    console.log(notes);
     if (!notes) {
       return res.status(404).json({ message: "Notes Not Found" });
     }
@@ -64,15 +72,15 @@ const createNote = async (req, res) => {
       return res.status(404).json({ message: "Cannot find room" });
     }
     const newNote = await prisma.note.create({
-      data: { title:"",content: "", roomId: room.id, createdById: userId },
+      data: { title: "", content: "", roomId: room.id, createdById: userId },
       include: {
-        createdBy:{
-          select:{
-            id:true,
-            name:true,
-            email:true
-          }
-        }
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
     return res.status(201).json(newNote);
@@ -98,6 +106,13 @@ const updateNote = async (req, res) => {
     const note = await prisma.note.update({
       where: { roomId: Number(roomId), id: Number(notesId) },
       data: { title: title, content: content },
+      include: {
+        room: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
     if (!note) {
       return res.status(404).json({ message: "Cannot find note" });
@@ -110,19 +125,21 @@ const updateNote = async (req, res) => {
 };
 // router.delete("/:roomId/notes/:notesId");
 const deleteNote = async (req, res) => {
-  const { roomId, notesId } = req.params;
+  const { roomId, noteId } = req.params;
   const userId = req?.userId;
   try {
     // verify that current user is a member of that room
-    const roomMember = await prisma.roomUser.findUnique({
+    const roomMember = await prisma.roomUser.findFirst({
       where: { userId: userId, roomId: Number(roomId) },
     });
     if (!roomMember) {
       return res.status(403).json({ message: "Forbidden" });
     }
+
     // verify that the note exists
     const note = await prisma.note.findUnique({
-      where: { id: Number(notesId) },
+      where: { id: parseInt(noteId) },
+      include: { room: true },
     });
     // if the note doesn't exist or the room ID assigned to the note isn't the same as the roomId provided
     if (!note || note.roomId !== Number(roomId)) {
@@ -130,10 +147,10 @@ const deleteNote = async (req, res) => {
     }
     // otherwise, we successfully delete the note
     await prisma.note.delete({
-      where: { roomId: Number(roomId), id: Number(notesId) },
+      where: { roomId: parseInt(roomId), id: parseInt(noteId) },
     });
 
-    res.status(201).json({ message: "Note Deleted" });
+    res.status(200).json({ message: "Note Deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

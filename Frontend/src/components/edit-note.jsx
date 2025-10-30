@@ -106,6 +106,12 @@ function EditNote({ roomID, noteID, onNoteUpdated }) {
           headers: { "Content-Type": "application/json" },
         }
       );
+      if (response.status === 404) {
+        console.log("Note not found");
+        setNoteContent("");
+        setNoteTitle("");
+        return;
+      }
       const data = await response.json();
       setNoteContent(data.content || "");
       setNoteTitle(data.title || "");
