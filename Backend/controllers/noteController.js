@@ -83,6 +83,9 @@ const createNote = async (req, res) => {
         },
       },
     });
+    req.io.to(`room-${roomId}`).emit("note-created", {
+      note: newNote
+    });
     return res.status(201).json(newNote);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -117,6 +120,14 @@ const updateNote = async (req, res) => {
     if (!note) {
       return res.status(404).json({ message: "Cannot find note" });
     }
+
+    req.io.to(`room-${roomId}`).emit('note-changed', {
+      noteId: parseInt(notesId),
+      title: title,
+      content: content,
+      updatedBy: userId,
+      timestamp: new Date()
+    });
 
     res.status(200).json(note);
   } catch (err) {

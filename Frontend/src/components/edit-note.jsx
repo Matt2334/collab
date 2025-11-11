@@ -71,18 +71,56 @@ const EmptyState = styled.div`
     margin: 0;
   }
 `;
-function EditNote({ roomID, noteID, onNoteUpdated }) {
+function EditNote({ roomID, noteID, socket }) {
+  //onNoteUpdated} }) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [debouncedContent] = useDebounce(noteContent, 500);
   const [debouncedTitle] = useDebounce(noteTitle, 500);
 
+  const currentUser = "John Doe"
   useEffect(() => {
     if (noteID) {
       getNote();
+    } else {
+      setNoteContent("");
+      setNoteTitle("");
     }
   }, [noteID]);
+
+  // Socket.io
+  useEffect(() => {
+    if (noteID && socket) {
+      socket.emit("note-editing", {
+        roomID,
+        noteID,
+        userName: currentUser,
+      });
+      setIsEditing(true);
+
+      return () => {
+        socket.emit("note-editing-stopped", { roomID, noteID });
+        setIsEditing(false);
+      };
+    }
+  }, [noteID, socket, roomID]);
+  useEffect(() => {
+    if (!socket || !noteID) {
+      return;
+    }
+    const handleNoteChanged = ({ content, title }) => {
+      if (!isEditing) {
+        setNoteContent(content);
+        if (title) setNoteTitle(title);
+      }
+    };
+    socket.on("note-updated", handleNoteChanged);
+    return () => {
+      socket.off("note-changed", handleNoteChanged);
+    };
+  }, [socket, noteID, isEditing]);
 
   useEffect(() => {
     if (
@@ -131,10 +169,10 @@ function EditNote({ roomID, noteID, onNoteUpdated }) {
           body: JSON.stringify({ title: noteTitle, content: debouncedContent }),
         }
       );
-      const updatedNote = await response.json();
-      if (onNoteUpdated) {
-        onNoteUpdated(updatedNote);
-      }
+      // const updatedNote = await response.json();
+      // if (onNoteUpdated) {
+      //   onNoteUpdated(updatedNote);
+      // }
     } catch (err) {
       console.error("Error saving note:", err);
     } finally {

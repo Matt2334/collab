@@ -2,6 +2,7 @@ import styled from "styled-components";
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import EditNote from "../components/edit-note";
+import { io } from "socket.io-client";
 
 const Wrap = styled.div`
   background-color: #ffffff;
@@ -205,6 +206,72 @@ function Rooms() {
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [m, setM] = useState("");
 
+  // Socket.io
+  const [isConnected, setIsConnected] = useState(false);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:3000", {
+      withCredentials: true,
+      autoConnect: true,
+    });
+    newSocket.on("connection", () => {
+      console.log("Connected", newSocket.id);
+      setIsConnected(true);
+    });
+    newSocket.on("disconnect", () => {
+      console.log("Disconnected");
+      setIsConnected(false);
+    });
+    newSocket.on("connect_error", (error) => {
+      console.error("Connection error:", error);
+      setIsConnected(false);
+    });
+
+    setSocket(newSocket);
+    return () => {
+      newSocket.close();
+    };
+  }, []);
+  useEffect(() => {
+    if (socket && id) {
+      console.log("Joining Room: ", id);
+      socket.emit("join-room", parseInt(id));
+      return () => {
+        console.log("Leaving Room: ", id);
+        socket.emit("leave-room", parseInt(id));
+      };
+    }
+  }, [socket, id]);
+
+  // Listen to Socket
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+    socket.on(
+      "note-updated",
+      ({ noteId, content, title, updatedBy, timestamp }) => {
+        console.log("Note updated by: ", updatedBy);
+        console.log(noteId, content, title, updatedBy, timestamp);
+        setNotes(
+          notes.map((note) =>
+            note.id === noteId
+              ? { noteId, content, title, updatedBy, timestamp }
+              : note
+          )
+        );
+      }
+    );
+    return () => {
+      // socket.off("note-created");
+      socket.off("note-updated");
+      // socket.off("note-deleted");
+      // socket.off("user-editing-note");
+      // socket.off("user-stopped-editing");
+    };
+  }, [socket, selectedNoteId]);
+
   // fetch room's notes
   useEffect(() => {
     fetch(`http://localhost:3000/api/note/${id}/notes`, {
@@ -217,7 +284,7 @@ function Rooms() {
         } else if (!response.ok) {
           throw new Error("Network response was not ok");
         }
-        
+
         return response.json();
       })
       .then((data) => {
@@ -232,7 +299,7 @@ function Rooms() {
         }
       });
   }, [id]);
-  const createNote = async () => {
+  const handleCreateNote = async () => {
     try {
       const response = await fetch(
         `http://localhost:3000/api/note/${id}/notes`,
@@ -250,11 +317,12 @@ function Rooms() {
       console.error("Error creating note:", err);
     }
   };
-  const handleNoteUpdated = (updatedNote) => {
-    setNotes(
-      notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
-    );
-  };
+
+  // const handleNoteUpdated = (updatedNote) => {
+  //   setNotes(
+  //     notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
+  //   );
+  // };
   const handleNoteDelete = async (noteID) => {
     try {
       const response = await fetch(
@@ -298,8 +366,8 @@ function Rooms() {
         <Title>
           {/* need to fix since if there are no notes, it wont come up with the name */}
           {/* need to fix room description at the same time. We can make an API call if desired */}
-          <h1>{notes[0]?.room?.name || 'Loading room...'}</h1> 
-          <h2>{notes[0]?.room?.desc || 'Loading description...'}</h2>
+          <h1>{notes[0]?.room?.name || "Loading room..."}</h1>
+          <h2>{notes[0]?.room?.desc || "Loading description..."}</h2>
           {/* {console.log(notes[0]?.room?.desc)} */}
         </Title>
         <div style={{ display: "flex", flexDirection: "row" }}>
@@ -330,7 +398,8 @@ function Rooms() {
           <Search>
             <div>
               <h3>Notes</h3>
-              <Button onClick={createNote}>+ New Note</Button>
+              {/* onClick might need ()=> handleCreateNote */}
+              <Button onClick={handleCreateNote}>+ New Note</Button>
             </div>
           </Search>
           {notes.map((note) => (
@@ -388,7 +457,8 @@ function Rooms() {
         <EditNote
           roomID={id}
           noteID={selectedNoteId}
-          onNoteUpdated={handleNoteUpdated}
+          // onNoteUpdated={handleNoteUpdated}
+          socket={socket}
         />
       </Bottom>
     </Wrap>
