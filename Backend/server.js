@@ -4,6 +4,7 @@ const http = require("http");
 const cors = require("cors");
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const socketAuth = require("./middleware/socketAuth.js")
 const userRoutes = require("./routes/user");
 const noteRoutes = require("./routes/notes");
 const roomRoutes = require("./routes/rooms");
@@ -16,6 +17,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "http://localhost:5173", credentials: true },
 });
+io.use(socketAuth);
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -35,12 +37,14 @@ io.on("connection", (socket) => {
     socket.leave(`room-${roomId}`);
     console.log(`User ${socket.id} joined room ${roomId}`);
   });
+
   // Begin Note Editing
-  socket.on("note-editing", ({ roomId, noteId, userName }) => {
+  socket.on("note-editing", ({ roomId, noteId }) => {
+    console.log(socket.userName)
     socket.to(`room-${roomId}`).emit("user-editing-note", {
       noteId,
-      userName,
-      userId: socket.id,
+      userName: socket.userName,
+      userId: socket.userId,
     });
   });
 
@@ -48,12 +52,12 @@ io.on("connection", (socket) => {
   socket.on("note-editing-stopped", ({ roomId, noteId }) => {
     socket.to(`room-${roomId}`).emit("user-stopped-editing", {
       noteId,
-      userId: socket.id,
+      userId: socket.userId,
     });
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("User disconnected:", socket.userName);
   });
 });
 

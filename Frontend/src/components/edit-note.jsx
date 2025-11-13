@@ -96,7 +96,6 @@ function EditNote({ roomID, noteID, socket }) {
       socket.emit("note-editing", {
         roomID,
         noteID,
-        userName: currentUser,
       });
       setIsEditing(true);
 
@@ -110,13 +109,14 @@ function EditNote({ roomID, noteID, socket }) {
     if (!socket || !noteID) {
       return;
     }
-    const handleNoteChanged = ({ content, title }) => {
-      if (!isEditing) {
+    const handleNoteChanged = ({noteID:updatedID, content, title }) => {
+      if (noteID === updatedID && !isEditing) {
+        console.log('External update received');
         setNoteContent(content);
         if (title) setNoteTitle(title);
       }
     };
-    socket.on("note-updated", handleNoteChanged);
+    socket.on("note-changed", handleNoteChanged);
     return () => {
       socket.off("note-changed", handleNoteChanged);
     };
@@ -169,10 +169,6 @@ function EditNote({ roomID, noteID, socket }) {
           body: JSON.stringify({ title: noteTitle, content: debouncedContent }),
         }
       );
-      // const updatedNote = await response.json();
-      // if (onNoteUpdated) {
-      //   onNoteUpdated(updatedNote);
-      // }
     } catch (err) {
       console.error("Error saving note:", err);
     } finally {

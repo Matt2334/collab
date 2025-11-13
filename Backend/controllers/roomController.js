@@ -40,7 +40,10 @@ const addMembers = async (req, res) => {
         .status(403)
         .json({ message: "You are not the owner of this room" });
     }
-    const member = await prisma.user.findFirst({ where: { email: email } });
+    const member = await prisma.user.findFirst({
+      where: { email: email },
+      include: {joinedRooms: true},
+    });
     if (!member) {
       return res.status(404).json({ message: "Cannot locate user" });
     }
@@ -56,6 +59,7 @@ const addMembers = async (req, res) => {
     });
     res.status(201).json({ message: `${email} successfully added` });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -109,18 +113,18 @@ const getRooms = async (req, res) => {
         },
       },
       orderBy: {
-        createdAt: "desc", 
+        createdAt: "desc",
       },
     });
-    const allRooms = roomQuery.map(room=>({
-      id:room.id,
-      name:room.name,
-      desc:room.desc,
-      author:room.owner.name,
+    const allRooms = roomQuery.map((room) => ({
+      id: room.id,
+      name: room.name,
+      desc: room.desc,
+      author: room.owner.name,
       lastActive: room.notes[0]?.updatedAt || room.createdAt,
-      noteCount:room._count.notes,
-      memberCount:room._count.members,
-    }))
+      noteCount: room._count.notes,
+      memberCount: room._count.members,
+    }));
 
     return res.status(200).json(allRooms);
   } catch (err) {

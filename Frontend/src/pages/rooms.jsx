@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import EditNote from "../components/edit-note";
 import { io } from "socket.io-client";
+import InviteOverlay from "../components/inviteOverlay";
 
 const Wrap = styled.div`
   background-color: #ffffff;
@@ -205,17 +206,57 @@ function Rooms() {
   const [notes, setNotes] = useState([]);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [m, setM] = useState("");
+  const [activeEditors, setActiveEditors] = useState({});
+  const [inviteActive, setInviteActive] = useState(false);
 
   // Socket.io
   const [isConnected, setIsConnected] = useState(false);
   const [socket, setSocket] = useState(null);
 
+  // fetch room's notes. Also used as a way to verify if a user is logged in
   useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/note/${id}/notes`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        if (response.status === 403 || response.status === 401) {
+          setM("You must be logged in to perform this action");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        if (data.message) {
+          setM(data.message);
+        } else {
+          connectSocket();
+          setNotes(data);
+
+          if (data.length > 0 && !selectedNoteId) {
+            setSelectedNoteId(data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching notes:", err);
+        setMessage("Failed to load notes");
+      }
+    };
+    fetchNotes();
+  }, [id]);
+
+  const connectSocket = () => {
     const newSocket = io("http://localhost:3000", {
       withCredentials: true,
       autoConnect: true,
     });
-    newSocket.on("connection", () => {
+    newSocket.on("connect", () => {
       console.log("Connected", newSocket.id);
       setIsConnected(true);
     });
@@ -229,10 +270,7 @@ function Rooms() {
     });
 
     setSocket(newSocket);
-    return () => {
-      newSocket.close();
-    };
-  }, []);
+  };
   useEffect(() => {
     if (socket && id) {
       console.log("Joining Room: ", id);
@@ -249,56 +287,43 @@ function Rooms() {
     if (!socket) {
       return;
     }
+    socket.on("note-created", ({ note }) => {
+      console.log("Note created by another user:", note);
+      setNotes((prevNotes) => [note, ...prevNotes]);
+    });
     socket.on(
-      "note-updated",
+      "note-changed",
       ({ noteId, content, title, updatedBy, timestamp }) => {
         console.log("Note updated by: ", updatedBy);
         console.log(noteId, content, title, updatedBy, timestamp);
-        setNotes(
-          notes.map((note) =>
+        setNotes((prevNotes) =>
+          prevNotes.map((note) =>
             note.id === noteId
-              ? { noteId, content, title, updatedBy, timestamp }
+              ? { ...note, content, title, updatedBy, timestamp }
               : note
           )
         );
       }
     );
+    socket.on("user-editing-note", ({ noteId, userName }) => {
+      setActiveEditors((prev) => ({ ...prev, [noteId]: userName }));
+    });
+    socket.on("user-stopped-editing-note", ({ noteId }) => {
+      setActiveEditors((prev) => {
+        const updatedList = { ...prev };
+        delete updatedList[noteId];
+        return updatedList;
+      });
+    });
     return () => {
-      // socket.off("note-created");
-      socket.off("note-updated");
+      socket.off("note-created");
+      socket.off("note-changed");
       // socket.off("note-deleted");
-      // socket.off("user-editing-note");
-      // socket.off("user-stopped-editing");
+      socket.off("user-editing-note");
+      socket.off("user-stopped-editing-note");
     };
   }, [socket, selectedNoteId]);
 
-  // fetch room's notes
-  useEffect(() => {
-    fetch(`http://localhost:3000/api/note/${id}/notes`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((response) => {
-        if (response.status === 403 || response.status === 401) {
-          setM("You must be logged in to perform this action");
-        } else if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-
-        return response.json();
-      })
-      .then((data) => {
-        if (data.message) {
-          setM(data.message);
-        } else {
-          setNotes(data);
-
-          if (data.length > 0 && !selectedNoteId) {
-            setSelectedNoteId(data[0].id);
-          }
-        }
-      });
-  }, [id]);
   const handleCreateNote = async () => {
     try {
       const response = await fetch(
@@ -318,11 +343,6 @@ function Rooms() {
     }
   };
 
-  // const handleNoteUpdated = (updatedNote) => {
-  //   setNotes(
-  //     notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
-  //   );
-  // };
   const handleNoteDelete = async (noteID) => {
     try {
       const response = await fetch(
@@ -342,8 +362,23 @@ function Rooms() {
       console.error("Error deleting note:", err);
     }
   };
+  const handleInviteDismiss = () => {
+    setInviteActive(false);
+  };
+  const handleInviteError = (err) => {
+    setM(err);
+  };
   return (
     <Wrap>
+      {inviteActive ? (
+        <InviteOverlay
+          roomID={id}
+          onDismiss={handleInviteDismiss}
+          onError={handleInviteError}
+        />
+      ) : (
+        <></>
+      )}
       <Top>
         <div>
           <BackButton to="/dashboard">
@@ -371,7 +406,7 @@ function Rooms() {
           {/* {console.log(notes[0]?.room?.desc)} */}
         </Title>
         <div style={{ display: "flex", flexDirection: "row" }}>
-          <InviteButton>
+          <InviteButton onClick={() => setInviteActive(true)}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -398,7 +433,6 @@ function Rooms() {
           <Search>
             <div>
               <h3>Notes</h3>
-              {/* onClick might need ()=> handleCreateNote */}
               <Button onClick={handleCreateNote}>+ New Note</Button>
             </div>
           </Search>
@@ -406,7 +440,11 @@ function Rooms() {
             <NoteCard
               key={note.id}
               $active={selectedNoteId === note.id}
-              onClick={() => setSelectedNoteId(note.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("Clicked note:", note.id);
+                setSelectedNoteId(note.id);
+              }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

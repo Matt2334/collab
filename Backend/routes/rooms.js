@@ -8,7 +8,7 @@ const {
   deleteRoom,
 } = require("../controllers/roomController");
 router.post("/create", authenticateJWT, createRoom);
-router.put("/rooms/:roomId/add", authenticateJWT, addMembers);
+router.put("/:roomId/add", authenticateJWT, addMembers);
 router.get("/list", authenticateJWT, getRooms);
 router.delete("/:roomId/leave", authenticateJWT, deleteRoom);
 module.exports = router;
