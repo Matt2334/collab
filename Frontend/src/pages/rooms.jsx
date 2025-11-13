@@ -227,6 +227,7 @@ function Rooms() {
         );
         if (response.status === 403 || response.status === 401) {
           setM("You must be logged in to perform this action");
+          window.location.replace("/login");
           return;
         }
         if (!response.ok) {
@@ -245,7 +246,7 @@ function Rooms() {
         }
       } catch (err) {
         console.error("Error fetching notes:", err);
-        setMessage("Failed to load notes");
+        setM("Failed to load notes");
       }
     };
     fetchNotes();
@@ -259,28 +260,31 @@ function Rooms() {
     newSocket.on("connect", () => {
       console.log("Connected", newSocket.id);
       setIsConnected(true);
+      console.log("Joining Room: ", id);
+      newSocket.emit("join-room", parseInt(id));
     });
     newSocket.on("disconnect", () => {
       console.log("Disconnected");
       setIsConnected(false);
+      console.log("Leaving Room: ", id);
+      newSocket.emit("leave-room", parseInt(id));
     });
     newSocket.on("connect_error", (error) => {
       console.error("Connection error:", error);
       setIsConnected(false);
+      const isAuthError =
+        error.message.toLowerCase().includes("token") ||
+        error.message.toLowerCase().includes("cookie");
+      if (isAuthError) {
+        console.log("Socket auth failed, redirecting...");
+        setTimeout(() => {
+          window.location.replace("/login");
+        }, 1000);
+        return;
+      }
     });
-
     setSocket(newSocket);
   };
-  useEffect(() => {
-    if (socket && id) {
-      console.log("Joining Room: ", id);
-      socket.emit("join-room", parseInt(id));
-      return () => {
-        console.log("Leaving Room: ", id);
-        socket.emit("leave-room", parseInt(id));
-      };
-    }
-  }, [socket, id]);
 
   // Listen to Socket
   useEffect(() => {
@@ -294,12 +298,12 @@ function Rooms() {
     socket.on(
       "note-changed",
       ({ noteId, content, title, updatedBy, timestamp }) => {
-        console.log("Note updated by: ", updatedBy);
-        console.log(noteId, content, title, updatedBy, timestamp);
+        // console.log("Note updated by: ", updatedBy);
+        // console.log(noteId, content, title, updatedBy, timestamp);
         setNotes((prevNotes) =>
           prevNotes.map((note) =>
             note.id === noteId
-              ? { ...note, content, title, updatedBy, timestamp }
+              ? { ...note, content, title, updatedBy, updatedAt: timestamp }
               : note
           )
         );
@@ -323,6 +327,15 @@ function Rooms() {
       socket.off("user-stopped-editing-note");
     };
   }, [socket, selectedNoteId]);
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        console.log("🔌 Closing socket and leaving room:", id);
+        socket.emit("leave-room", parseInt(id));
+        socket.close();
+      }
+    };
+  }, [socket, id]);
 
   const handleCreateNote = async () => {
     try {

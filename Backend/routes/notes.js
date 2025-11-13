@@ -1,4 +1,5 @@
 const express = require("express");
+const authenticateJWT = require("../middleware/auth.js");
 module.exports = (io) => {
   const router = express.Router();
   const {
@@ -15,11 +16,11 @@ module.exports = (io) => {
     req.io = io;
     next();
   });
-  router.post("/:roomId/notes", createNote);
-  router.get("/:roomId/notes", getNotes);
-  router.get("/:roomId/notes/:notesId", getIndividual);
-  router.put("/:roomId/notes/:notesId", updateNote);
-  router.delete("/:roomId/notes/:noteId", deleteNote);
+  router.post("/:roomId/notes", authenticateJWT, createNote);
+  router.get("/:roomId/notes", authenticateJWT, getNotes);
+  router.get("/:roomId/notes/:notesId", authenticateJWT, getIndividual);
+  router.put("/:roomId/notes/:notesId", authenticateJWT, updateNote);
+  router.delete("/:roomId/notes/:noteId", authenticateJWT, deleteNote);
   return router;
 };
 // module.exports = router;

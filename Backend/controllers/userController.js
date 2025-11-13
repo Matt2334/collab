@@ -34,27 +34,39 @@ const login = async (req, res) => {
       expiresIn: "1h",
     });
     res.cookie("token", token, {
-      httpOnly: true, 
+      httpOnly: true,
       secure: false, //in dev false, for production needs to be true
       sameSite: "strict", // CSRF protection
-      maxAge: 3600000 
+      maxAge: 3600000,
     });
-    res.status(200).json({message:'Login Successful' });
+    res.status(200).json({ message: "Login Successful" });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
   }
 };
 // router.get("/logout");
 const logout = async (req, res) => {
-  req.session.destroy(() => {
-    res.status(200).json({ message: "Logged out successfully" });
-  });
+  const userId = req?.userId;
+  try {
+    if (!userId) {
+      return res.status(403).json({ message: "Action Forbidden" });
+    }
+    req.session.destroy(() => {
+      res.status(200).json({ message: "Logged out successfully" });
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
 };
 // router.put("/update-record");
 const updateUser = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req?.userId;
   const { email, password } = req.body;
   try {
+    if (!userId) {
+      return res.status(403).json({ message: "Action Forbidden" });
+    }
     const hPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.update({
       where: { id: userId },
@@ -71,15 +83,15 @@ const updateUser = async (req, res) => {
 // router.delete("/delete");
 const deleteAccount = async (req, res) => {
   const userId = req?.userId;
-  if (!userId) {
-    res.status(404).json({ message: "You are forbidden from this action" });
-  }
-  await prisma.note.deleteMany({ where: { createdById: userId } });
-  await prisma.roomUser.deleteMany({ where: { userId } });
-  await prisma.room.deleteMany({ where: { ownerId: userId } });
-  await prisma.user.delete({ where: { id: userId } });
-  res.json({ message: "Account deleted" });
   try {
+    if (!userId) {
+      res.status(404).json({ message: "You are forbidden from this action" });
+    }
+    await prisma.note.deleteMany({ where: { createdById: userId } });
+    await prisma.roomUser.deleteMany({ where: { userId } });
+    await prisma.room.deleteMany({ where: { ownerId: userId } });
+    await prisma.user.delete({ where: { id: userId } });
+    res.json({ message: "Account deleted" });
   } catch (err) {
     res.status(500).json({ message: "Internal server error" });
   }

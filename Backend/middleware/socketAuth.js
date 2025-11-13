@@ -1,16 +1,25 @@
 const jwt = require("jsonwebtoken");
-// const prisma = require('../prisma');
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const authenticateSocketJWT = async (socket, next) => {
+  let token;
   try {
     const cookies = socket.handshake.headers.cookie;
-    if (!cookies) {
-      throw new Error("No cookies provided");
+    if (cookies) {
+      token = cookies
+        .split("; ")
+        .find((c) => c.startsWith("token="))
+        ?.split("=")[1];
     }
-    const token = cookies.split('; ')
-      .find(c => c.startsWith('token='))
-      ?.split('=')[1];
+
+    if (!token) {
+      console.warn("⚠️ No token - allowing anonymous connection");
+      socket.isAuthenticated = false;
+      socket.userId = null;
+      socket.userName = "Anonymous";
+      return next();
+    }
+
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
     const user = await prisma.user.findUnique({
@@ -23,17 +32,24 @@ const authenticateSocketJWT = async (socket, next) => {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      socket.isAuthenticated = false;
+      socket.userId = null;
+      socket.userName = "Anonymous";
+    } else {
+      socket.isAuthenticated = true;
+      socket.userId = user.id;
+      socket.userName = user.name;
+      socket.userEmail = user.email;
     }
 
-    return {
-      userId: user.id,
-      userName: user.name,
-      userEmail: user.email,
-    };
+    return next();
   } catch (err) {
-    console.log(err)
-    throw new Error("Invalid or expired token");
+    console.log(err);
+    console.warn("Socket auth failed, marking as anonymous:", err.message);
+    socket.isAuthenticated = false;
+    socket.userId = null;
+    socket.userName = "Anonymous";
+    return next();
   }
 };
-module.exports = authenticateSocketJWT ;
+module.exports = authenticateSocketJWT;

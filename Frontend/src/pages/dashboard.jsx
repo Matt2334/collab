@@ -94,16 +94,12 @@ function Dashboard() {
       // headers: { "Content-Type": "application/json" },
     })
       .then((response) => {
-        console.log(response)
-        if (response.status===401){
-          window.location.replace('/login')
-        }
-        else if (response.status === 403) {
-          setErrorMessage("You must be logged in to perform this action");
-        } else if(response.status === 404){
-          setErrorMessage(response.message) //will need to change so a different action is performed when no lists are present
-        } 
-        else if (!response.ok) {
+        console.log(response);
+        if (response.status === 401 || response.status === 403) {
+          window.location.replace("/login");
+        } else if (response.status === 404) {
+          setErrorMessage(response.message); //will need to change so a different action is performed when no lists are present
+        } else if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         return response.json();
@@ -112,7 +108,7 @@ function Dashboard() {
         if (data.message) {
           setErrorMessage(data.message);
         } else {
-          console.log(data)
+          console.log(data);
           setList(data);
         }
       });
@@ -124,9 +120,9 @@ function Dashboard() {
     setList([...list, newRoom]);
     setShowCreateRoom(false);
   };
-  const handleRoomError = (err) =>{
-    setErrorMessage(err)
-  }
+  const handleRoomError = (err) => {
+    setErrorMessage(err);
+  };
   return (
     <Wrapper>
       <Nav>
@@ -155,7 +151,11 @@ function Dashboard() {
         </div>
       </Nav>
       {showCreateRoom ? (
-        <CreateRoom onCreate={handleRoomCreated} onDismiss={handleDismiss} onError={handleRoomError}/>
+        <CreateRoom
+          onCreate={handleRoomCreated}
+          onDismiss={handleDismiss}
+          onError={handleRoomError}
+        />
       ) : (
         <Content>
           {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
@@ -165,7 +165,7 @@ function Dashboard() {
           ) : (
             <S>Create Your first room!</S>
           )}
-          {list.length >0? <Grid rooms={list} /> :<></>}
+          {list.length > 0 ? <Grid rooms={list} /> : <></>}
         </Content>
       )}
     </Wrapper>

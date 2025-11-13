@@ -6,11 +6,14 @@ const getNotes = async (req, res) => {
   const { roomId } = req.params;
   const userId = req?.userId;
   try {
-    const room = await prisma.room.findUnique({
+    if (!userId) {
+      return res.status(404).json({ message: "You are forbidden from this action" });
+    }
+    const room = await prisma.room.findFirst({
       where: {
         id: Number(roomId),
         OR: [
-          { owner: userId },
+          { ownerId: userId },
           {
             members: {
               some: {
@@ -37,6 +40,7 @@ const getNotes = async (req, res) => {
         },
       },
     });
+    console.log(notes)
     if (!notes) {
       return res.status(404).json({ message: "Notes Not Found" });
     }
@@ -48,7 +52,11 @@ const getNotes = async (req, res) => {
 // router.get("/:roomId/notes/:notesId");
 const getIndividual = async (req, res) => {
   const { roomId, notesId } = req.params;
+  const userId = req?.userId
   try {
+    if (!userId) {
+      return res.status(404).json({ message: "You are forbidden from this action" });
+    }
     const note = await prisma.note.findUnique({
       where: { roomId: Number(roomId), id: Number(notesId) },
     });
@@ -65,6 +73,9 @@ const createNote = async (req, res) => {
   const { roomId } = req.params;
   const userId = req?.userId;
   try {
+    if (!userId) {
+      return res.status(404).json({ message: "You are forbidden from this action" });
+    }
     const room = await prisma.room.findUnique({
       where: { id: Number(roomId) },
     });
@@ -84,7 +95,7 @@ const createNote = async (req, res) => {
       },
     });
     req.io.to(`room-${roomId}`).emit("note-created", {
-      note: newNote
+      note: newNote,
     });
     return res.status(201).json(newNote);
   } catch (err) {
@@ -121,12 +132,12 @@ const updateNote = async (req, res) => {
       return res.status(404).json({ message: "Cannot find note" });
     }
 
-    req.io.to(`room-${roomId}`).emit('note-changed', {
+    req.io.to(`room-${roomId}`).emit("note-changed", {
       noteId: parseInt(notesId),
       title: title,
       content: content,
       updatedBy: userId,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     res.status(200).json(note);
