@@ -191,7 +191,7 @@ const CreateButton = styled.button`
 function CreateRoom({ onCreate, onDismiss, onError }) {
   const [roomName, setRoomName] = useState("");
   const [roomDescription, setRoomDescription] = useState("");
-  
+
   const handleCreateRoom = async (e) => {
     e.preventDefault();
 
@@ -215,11 +215,21 @@ function CreateRoom({ onCreate, onDismiss, onError }) {
       }
 
       const newRoom = await response.json();
-      
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/note/${newRoom["room"].id}/notes`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      } catch (err) {
+        console.error("Error creating initial note:", err);
+      }
       setRoomName("");
       setRoomDescription("");
       onCreate(newRoom);
-
     } catch (error) {
       console.error("Error creating room:", error);
       onError("Failed to create room");

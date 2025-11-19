@@ -43,10 +43,13 @@ const Modal = styled.div`
       opacity: 1;
     }
   }
+  form {
+    display: flex;
+    flex-direction: column;
+  }
 `;
 const ModalHeader = styled.div`
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -76,7 +79,8 @@ const Input = styled.input`
   color: #1f2937;
   transition: all 0.2s ease;
   box-sizing: border-box;
-
+  width: 90%;
+  align-self: center;
   &:focus {
     outline: none;
     border-color: #8e7eff;
@@ -107,7 +111,6 @@ const CloseButton = styled.button`
 `;
 const ModalFooter = styled.div`
   padding: 1.5rem 2rem;
-  border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
@@ -161,14 +164,17 @@ function inviteOverlay({ roomID, onDismiss, onError }) {
   const [email, setEmail] = useState("");
   const handleRoomInvite = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/room/${roomID}/add`, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-        "Content-Type": "application/json",  
-      },
-        body: JSON.stringify({ email: email }),
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/room/${roomID}/add`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: email }),
+        }
+      );
       if (!response.ok) {
         console.log("Error", response.status);
         return;

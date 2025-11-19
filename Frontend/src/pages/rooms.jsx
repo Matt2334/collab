@@ -204,10 +204,11 @@ const Button = styled.button`
 function Rooms() {
   const { id } = useParams();
   const [notes, setNotes] = useState([]);
-  const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(null);
   const [m, setM] = useState("");
   const [activeEditors, setActiveEditors] = useState({});
   const [inviteActive, setInviteActive] = useState(false);
+  const [selectedNoteId, setSelectedNoteId ] = useState(null)
 
   // Socket.io
   const [isConnected, setIsConnected] = useState(false);
@@ -240,8 +241,9 @@ function Rooms() {
           connectSocket();
           setNotes(data);
 
-          if (data.length > 0 && !selectedNoteId) {
-            setSelectedNoteId(data[0].id);
+          if (data.length > 0 && !selectedNote) {
+            setSelectedNote(data[0]);
+            setSelectedNoteId(data[0]?.id)
           }
         }
       } catch (err) {
@@ -307,6 +309,11 @@ function Rooms() {
               : note
           )
         );
+        setSelectedNote((prev) => {
+          prev?.id === noteId
+            ? { ...prev, content, title, updatedBy, updatedAt: timestamp }
+            : prev;
+        });
       }
     );
     socket.on("user-editing-note", ({ noteId, userName }) => {
@@ -326,11 +333,11 @@ function Rooms() {
       socket.off("user-editing-note");
       socket.off("user-stopped-editing-note");
     };
-  }, [socket, selectedNoteId]);
+  }, [socket, selectedNote]);
   useEffect(() => {
     return () => {
       if (socket) {
-        console.log("🔌 Closing socket and leaving room:", id);
+        console.log("Closing socket and leaving room:", id);
         socket.emit("leave-room", parseInt(id));
         socket.close();
       }
@@ -350,7 +357,7 @@ function Rooms() {
       const newNote = await response.json();
       console.log(newNote);
       setNotes([newNote, ...notes]);
-      setSelectedNoteId(newNote.id);
+      setSelectedNote(newNote);
     } catch (err) {
       console.error("Error creating note:", err);
     }
@@ -368,8 +375,8 @@ function Rooms() {
       const updatedNotes = notes.filter((note) => note.id !== noteID);
       setNotes(updatedNotes);
 
-      if (selectedNoteId === noteID) {
-        setSelectedNoteId(updatedNotes.length > 0 ? updatedNotes[0].id : null);
+      if (selectedNote?.id === noteID) {
+        setSelectedNote(updatedNotes.length > 0 ? updatedNotes[0] : null);
       }
     } catch (err) {
       console.error("Error deleting note:", err);
@@ -381,6 +388,7 @@ function Rooms() {
   const handleInviteError = (err) => {
     setM(err);
   };
+  
   return (
     <Wrap>
       {inviteActive ? (
@@ -505,12 +513,7 @@ function Rooms() {
             </NoteCard>
           ))}
         </SideBar>
-        <EditNote
-          roomID={id}
-          noteID={selectedNoteId}
-          // onNoteUpdated={handleNoteUpdated}
-          socket={socket}
-        />
+        <EditNote roomID={id} noteID={selectedNoteId} socket={socket} />
       </Bottom>
     </Wrap>
   );

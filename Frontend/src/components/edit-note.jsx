@@ -72,7 +72,6 @@ const EmptyState = styled.div`
   }
 `;
 function EditNote({ roomID, noteID, socket }) {
-  //onNoteUpdated} }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
@@ -80,7 +79,7 @@ function EditNote({ roomID, noteID, socket }) {
   const [debouncedContent] = useDebounce(noteContent, 500);
   const [debouncedTitle] = useDebounce(noteTitle, 500);
 
-  const currentUser = "John Doe"
+
   useEffect(() => {
     if (noteID) {
       getNote();

@@ -109,6 +109,7 @@ function Dashboard() {
           setErrorMessage(data.message);
         } else {
           console.log(data);
+          
           setList(data);
         }
       });
