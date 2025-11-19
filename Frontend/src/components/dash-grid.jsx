@@ -44,6 +44,7 @@ const Text = styled.span`
   color: oklch(0.55 0.02 280);
   font-size: 14px;
   margin-right: 0.5rem;
+  display: flex;
 `;
 
 const Content = styled.div`

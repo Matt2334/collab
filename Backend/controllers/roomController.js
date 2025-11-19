@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const { redisClient } = require("../config/redisClient.js");
 const prisma = new PrismaClient();
 
 // router.post('/create')
@@ -20,6 +21,9 @@ const createRoom = async (req, res) => {
         role: "admin",
       },
     });
+    if (await redisClient.get("rooms")) {
+      await redisClient.del(`rooms`);
+    }
     return res.status(201).json({ message: "Room created", room: newRoom });
   } catch (err) {
     res.status(500).json({ message: "Internal Service Error" });
@@ -42,7 +46,7 @@ const addMembers = async (req, res) => {
     }
     const member = await prisma.user.findFirst({
       where: { email: email },
-      include: {joinedRooms: true},
+      include: { joinedRooms: true },
     });
     if (!member) {
       return res.status(404).json({ message: "Cannot locate user" });
@@ -74,6 +78,11 @@ const getRooms = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    const cache = await redisClient.get(`rooms`);
+    if (cache) {
+      return res.json({ source: "cache", data: JSON.parse(cache) });
     }
     const roomQuery = await prisma.room.findMany({
       where: {
@@ -125,7 +134,8 @@ const getRooms = async (req, res) => {
       noteCount: room._count.notes,
       memberCount: room._count.members,
     }));
-
+    // 60 seconds for testing purposes
+    await redisClient.setEx(`rooms`, 60, JSON.stringify(allRooms));
     return res.status(200).json(allRooms);
   } catch (err) {
     res.status(500).json({ error: err.message });

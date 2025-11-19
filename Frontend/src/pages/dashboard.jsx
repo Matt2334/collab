@@ -104,13 +104,11 @@ function Dashboard() {
         }
         return response.json();
       })
-      .then((data) => {
-        if (data.message) {
-          setErrorMessage(data.message);
+      .then((content) => {
+        if (content.message) {
+          setErrorMessage(content.message);
         } else {
-          console.log(data);
-          
-          setList(data);
+          setList(content["data"]?content["data"]: []);
         }
       });
   }, []);
